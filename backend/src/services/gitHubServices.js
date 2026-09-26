@@ -26,3 +26,20 @@ export async function getRepositoryTree(owner, repo, branch) {
 
   return response.data;
 }
+
+export async function getFileContent(
+  owner,
+  repo,
+  fileSha
+) {
+  const response = await octokit.request(
+    "GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
+    {
+      owner,
+      repo,
+      file_sha: fileSha,
+    }
+  );
+
+  return response.data;
+}
