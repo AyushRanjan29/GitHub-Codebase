@@ -1,10 +1,8 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-
+import "dotenv/config";
 import repositoryRoutes from "./routes/repositoryRoutes.js";
-
-dotenv.config();
+import { connectMongoDB } from "./config/mongodb.js";
 
 const app = express();
 
@@ -26,10 +24,17 @@ app.use("/api/repository", repositoryRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "GitHub Codebase RAG backend is running",
+    message: "GitHub Codebase backend is running",
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
-});
+connectMongoDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Backend running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to connect to MongoDB:", error);
+    process.exit(1);
+  });

@@ -6,6 +6,8 @@ import { parseGitHubUrl } from "../utils/gitHubParser.js";
 import { isSupportedFile } from "../utils/fileFilter.js";
 import { createRepositoryDocuments } from "../services/documentService.js";
 import { chunkDocument } from "../services/chunkService.js";
+import { embedChunks } from "../services/chunkEmbeddingService.js";
+import { insertChunks } from "../repositories/chunkRepository.js";
 
 export async function indexRepository(req, res) {
   try {
@@ -54,28 +56,16 @@ export async function indexRepository(req, res) {
 
     console.log(`Extracted ${documents.length} documents`);
 
-    return res.json({
-      success: true,
+    const MAX_CHUNKS_FOR_TESTING = 20;
+    const chunksToEmbed = chunks.slice(0, MAX_CHUNKS_FOR_TESTING);
 
-      repository: {
-        name: repository.name,
-        fullName: repository.full_name,
-        description: repository.description,
-        defaultBranch: repository.default_branch,
-        language: repository.language,
-      },
+    console.log(`Embedding ${chunksToEmbed.length} of ${chunks.length} chunks`);
 
-      totalFiles: files.length,
+    const embeddedChunks = await embedChunks(chunksToEmbed);
+    const mongoResult = await insertChunks(embeddedChunks);
 
-      totalDocuments: documents.length,
-
-      // documents,
-      metadata: documents.map((document) => ({
-        ...document.metadata,
-      })),
-    });
-  } catch (error) {
-    console.error("Repository indexing error:", error);
+    console.log(`Stored ${mongoResult.insertedCount} chunks in MongoDB`);
+    console.log(`Generated embeddings for ${embeddedChunks.length} chunks`);
 
     return res.json({
       success: true,
@@ -94,10 +84,28 @@ export async function indexRepository(req, res) {
 
       totalChunks: chunks.length,
 
-      chunks: chunks.map((chunk) => ({
+      chunksSentForEmbedding: chunksToEmbed.length,
+
+      totalEmbeddedChunks: embeddedChunks.length,
+
+      storedInMongoDB: mongoResult.insertedCount,
+
+      embeddingDimension: embeddedChunks[0]?.embedding.length || 0,
+
+      chunks: embeddedChunks.map((chunk) => ({
         metadata: chunk.metadata,
-        contentPreview: chunk.content.slice(0, 200),
+
+        embeddingPreview: chunk.embedding.slice(0, 5),
+
+        embeddingLength: chunk.embedding.length,
       })),
+    });
+  } catch (error) {
+    console.error("Repository indexing error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to index repository",
     });
   }
 }
