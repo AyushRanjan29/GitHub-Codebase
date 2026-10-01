@@ -6,27 +6,16 @@ export async function embedChunks(chunks) {
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
 
-    try {
-      console.log(
-        `Embedding chunk ${i + 1}/${chunks.length}: ${chunk.metadata.filePath}`,
-      );
+    console.log(
+      `Embedding chunk ${i + 1}/${chunks.length}: ${chunk.metadata.filePath} - chunk ${chunk.metadata.chunkIndex}`,
+    );
 
-      const embedding = await generateEmbedding(chunk.content);
+    const embedding = await generateEmbedding(chunk.content);
 
-      embeddedChunks.push({
-        content: chunk.content,
-
-        embedding,
-
-        metadata: {
-          ...chunk.metadata,
-        },
-      });
-    } catch (error) {
-      console.error(`Failed to embed chunk ${i}:`, error);
-
-      throw error;
-    }
+    embeddedChunks.push({
+      ...chunk,
+      embedding,
+    });
   }
 
   return embeddedChunks;

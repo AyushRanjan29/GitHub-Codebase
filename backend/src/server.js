@@ -3,6 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 import repositoryRoutes from "./routes/repositoryRoutes.js";
 import { connectMongoDB } from "./config/mongodb.js";
+import searchRoutes from "./routes/searchRoutes.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/repository", repositoryRoutes);
+app.use("/api/search", searchRoutes);
 
 // Health check
 app.get("/", (req, res) => {

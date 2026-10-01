@@ -9,11 +9,11 @@ export async function searchSimilarChunks(queryEmbedding, limit = 5) {
     .aggregate([
       {
         $vectorSearch: {
-            index: "vector_index",
-            path: "embedding",
-            queryVector: queryEmbedding,
-            numCandidates: 50,
-            limit,
+          index: "vector_index",
+          path: "embedding",
+          queryVector: queryEmbedding,
+          numCandidates: 50,
+          limit,
         },
       },
       {
