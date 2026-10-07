@@ -103,3 +103,74 @@ export async function getExistingChunkIds(chunkIds) {
 
   return new Set(documents.map((document) => document.chunkId));
 }
+
+export async function getRepositoryFileStates(repository) {
+  const db = getDatabase();
+  const collection = db.collection(COLLECTION_NAME);
+
+  const documents = await collection
+    .aggregate([
+      {
+        $match: {
+          "metadata.repository": repository,
+        },
+      },
+      {
+        $group: {
+          _id: "$metadata.filePath",
+          sha: {
+            $first: "$metadata.sha",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          filePath: "$_id",
+          sha: 1,
+        },
+      },
+    ])
+    .toArray();
+
+  return new Map(
+    documents.map((document) => [document.filePath, document.sha]),
+  );
+}
+
+export async function deleteChunksByFiles(
+  repository,
+  filePaths,
+  currentShas = new Map(),
+) {
+  if (!filePaths || filePaths.length === 0) {
+    return { deletedCount: 0 };
+  }
+
+  const db = getDatabase();
+  const collection = db.collection(COLLECTION_NAME);
+
+  const conditions = filePaths.map((filePath) => {
+    const currentSha = currentShas.get(filePath);
+
+    if (currentSha) {
+      return {
+        "metadata.filePath": filePath,
+        "metadata.sha": { $ne: currentSha },
+      };
+    }
+
+    return {
+      "metadata.filePath": filePath,
+    };
+  });
+
+  const result = await collection.deleteMany({
+    "metadata.repository": repository,
+    $or: conditions,
+  });
+
+  return {
+    deletedCount: result.deletedCount,
+  };
+}

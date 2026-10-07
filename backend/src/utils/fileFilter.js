@@ -12,6 +12,9 @@ const SUPPORTED_EXTENSIONS = [
   ".css",
   ".json",
   ".md",
+  ".txt",
+  ".yml",
+  ".yaml",
 ];
 
 const IGNORED_DIRECTORIES = [

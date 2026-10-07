@@ -31,7 +31,12 @@ export async function searchCode(req, res) {
     );
 
     // Step 2: Retrieve relevant code chunks
-    const results = await searchSimilarChunks(queryEmbedding, repository.trim(), 5);
+    const results = await searchSimilarChunks(
+      queryEmbedding,
+      repository.trim(),
+      5,
+      query,
+    );
 
     console.log(`Retrieved ${results.length} chunks`);
 
@@ -47,7 +52,7 @@ export async function searchCode(req, res) {
         filePath: chunk.metadata.filePath,
         startLine: chunk.metadata.startLine,
         endLine: chunk.metadata.endLine,
-        score: chunk.score,
+        score: chunk.rerankScore ?? chunk.score,
       })),
     });
   } catch (error) {
