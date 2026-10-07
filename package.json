@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "@google/genai": "^2.24.0"
+    "@google/genai": "^2.24.0",
+    "lucide-react": "^1.52.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   }
 }

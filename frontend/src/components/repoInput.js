@@ -1,22 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { GitBranch, RefreshCw } from "lucide-react";
 
-export default function RepoInput() {
+export default function RepoInput({ onRepositoryChange }) {
   const [repoUrl, setRepoUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [repository, setRepository] = useState(null);
   const [error, setError] = useState("");
 
-  const analyzeRepository = async () => {
+  const analyzeRepository = async (e) => {
+    e.preventDefault();
+
     if (!repoUrl.trim()) {
-      setError("Please enter a GitHub repository URL");
+      setError("Please enter a GitHub repository URL.");
       return;
     }
 
     setLoading(true);
     setError("");
     setRepository(null);
+
+    // Clear the previously selected repository while a new one is being analyzed.
+    onRepositoryChange("");
 
     try {
       const response = await fetch(
@@ -26,71 +32,65 @@ export default function RepoInput() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            repoUrl,
-          }),
+          body: JSON.stringify({ repoUrl: repoUrl.trim() }),
         },
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to analyze repository");
+        throw new Error(data.message || "Failed to analyze repository.");
       }
 
       setRepository(data);
-    } catch (error) {
-      setError(error.message);
+
+      // Send the canonical repository name to the parent component.
+      const fullName = data.repository?.fullName;
+
+      if (fullName) {
+        onRepositoryChange(fullName);
+      }
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-3xl">
-      <div className="flex gap-3">
+    <div className="w-full">
+      <form
+        onSubmit={analyzeRepository}
+        className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-[#151821] p-1.5 shadow-lg shadow-black/20"
+      >
+        <GitBranch size={18} className="ml-2 shrink-0 text-slate-400" />
+
         <input
-          type="text"
+          type="url"
           value={repoUrl}
           onChange={(e) => setRepoUrl(e.target.value)}
           placeholder="https://github.com/user/repository"
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-white outline-none focus:border-blue-500"
+          aria-label="GitHub repository URL"
+          className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500"
         />
 
         <button
-          onClick={analyzeRepository}
+          type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex shrink-0 items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:text-sm"
         >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           {loading ? "Analyzing..." : "Analyze"}
         </button>
-      </div>
+      </form>
 
-      {error && <p className="mt-4 text-red-400">{error}</p>}
+      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
 
       {repository && (
-        <div className="mt-8 rounded-xl border border-gray-800 bg-gray-900 p-6">
-          <h2 className="text-2xl font-semibold">
-            {repository.repository.name}
-          </h2>
-
-          <p className="mt-2 text-gray-400">
-            {repository.repository.description || "No description"}
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Branch</p>
-
-              <p className="mt-1">{repository.repository.defaultBranch}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Files</p>
-
-              <p className="mt-1">{repository.totalFiles}</p>
-            </div>
-          </div>
+        <div className="mt-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-300">
+          Indexed: {repository.repository?.name || "Repository"}
+          {" · "}
+          {repository.totalFiles ?? 0} files
         </div>
       )}
     </div>

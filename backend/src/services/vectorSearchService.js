@@ -1,6 +1,10 @@
 import { getDatabase } from "../config/mongodb.js";
 
-export async function searchSimilarChunks(queryEmbedding, limit = 5) {
+export async function searchSimilarChunks(
+  queryEmbedding,
+  repository,
+  limit = 5,
+) {
   const db = getDatabase();
   const collection = db.collection("code_chunks");
 
@@ -11,20 +15,24 @@ export async function searchSimilarChunks(queryEmbedding, limit = 5) {
           index: "vector_index",
           path: "embedding",
           queryVector: queryEmbedding,
-          numCandidates: 75,
-          limit: 15,
+          numCandidates: 100,
+          limit: 50,
         },
       },
+
       {
         $match: {
+          "metadata.repository": repository,
           "metadata.filePath": {
             $not: /(^|\/)package-lock\.json$/i,
           },
         },
       },
+
       {
         $limit: limit,
       },
+
       {
         $project: {
           _id: 0,

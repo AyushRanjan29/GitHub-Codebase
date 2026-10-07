@@ -4,7 +4,7 @@ import { generateRAGAnswer } from "../services/geminiService.js";
 
 export async function searchCode(req, res) {
   try {
-    const { query } = req.body;
+    const { query, repository } = req.body;
 
     if (!query || !query.trim()) {
       return res.status(400).json({
@@ -13,7 +13,15 @@ export async function searchCode(req, res) {
       });
     }
 
+    if (!repository || !repository.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Repository is required",
+      });
+    }
+
     console.log(`Searching for: ${query}`);
+    console.log(`Repository filter: ${repository}`);
 
     // Step 1: Generate embedding for the user's question
     const queryEmbedding = await generateQueryEmbedding(query);
@@ -23,7 +31,7 @@ export async function searchCode(req, res) {
     );
 
     // Step 2: Retrieve relevant code chunks
-    const results = await searchSimilarChunks(queryEmbedding, 5);
+    const results = await searchSimilarChunks(queryEmbedding, repository.trim(), 5);
 
     console.log(`Retrieved ${results.length} chunks`);
 
