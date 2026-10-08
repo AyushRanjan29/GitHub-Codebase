@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL,
   }),
 );
 
@@ -27,6 +27,14 @@ app.get("/", (req, res) => {
   res.json({
     success: true,
     message: "GitHub Codebase backend is running",
+  });
+});
+
+// API 404 handler
+app.use("/api", (req, res) => {
+  return res.status(404).json({
+    success: false,
+    message: "API route not found.",
   });
 });
 

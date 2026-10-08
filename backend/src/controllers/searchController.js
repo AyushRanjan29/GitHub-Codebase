@@ -4,19 +4,19 @@ import { generateRAGAnswer } from "../services/geminiService.js";
 
 export async function searchCode(req, res) {
   try {
-    const { query, repository } = req.body;
+    const { query, repository } = req.body || {};
 
-    if (!query || !query.trim()) {
+    if (typeof query !== "string" || !query.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Query is required",
+        message: "Query is required and must be a non-empty string.",
       });
     }
 
-    if (!repository || !repository.trim()) {
+    if (typeof repository !== "string" || !repository.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Repository is required",
+        message: "Repository is required and must be a non-empty string.",
       });
     }
 
@@ -60,7 +60,7 @@ export async function searchCode(req, res) {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "RAG search failed",
+      message: "Failed to process the search request.",
     });
   }
 }

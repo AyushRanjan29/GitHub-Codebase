@@ -18,16 +18,16 @@ import {
 
 export async function indexRepository(req, res) {
   try {
-    const { repoUrl } = req.body;
+    const { repoUrl } = req.body || {};
 
-    if (!repoUrl) {
+    if (typeof repoUrl !== "string" || !repoUrl.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Repository URL is required",
+        message: "Repository URL is required and must be a non-empty string.",
       });
     }
 
-    const { owner, repo } = parseGitHubUrl(repoUrl);
+    const { owner, repo } = parseGitHubUrl(repoUrl.trim());
 
     const repositoryName = `${owner}/${repo}`;
 
@@ -205,9 +205,16 @@ export async function indexRepository(req, res) {
   } catch (error) {
     console.error("Repository indexing error:", error);
 
+    if (error.code === "INVALID_GITHUB_URL") {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid GitHub repository URL.",
+      });
+    }
+
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to index repository",
+      message: "Failed to index the repository.",
     });
   }
 }

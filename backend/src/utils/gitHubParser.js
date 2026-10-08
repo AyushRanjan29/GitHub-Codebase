@@ -3,7 +3,7 @@ export function parseGitHubUrl(repoUrl) {
     const url = new URL(repoUrl);
 
     if (url.hostname !== "github.com") {
-      throw new Error("URL must be a GitHub repository URL");
+      throw new Error("Invalid GitHub repository URL");
     }
 
     const parts = url.pathname.split("/").filter(Boolean);
@@ -13,13 +13,19 @@ export function parseGitHubUrl(repoUrl) {
     }
 
     const owner = parts[0];
-    const repo = parts[1].replace(".git", "");
+    const repo = parts[1].replace(/\.git$/, "");
+
+    if (!owner || !repo) {
+      throw new Error("Invalid GitHub repository URL");
+    }
 
     return {
       owner,
       repo,
     };
-  } catch (error) {
-    throw new Error("Invalid GitHub repository URL");
+  } catch {
+    const error = new Error("Invalid GitHub repository URL");
+    error.code = "INVALID_GITHUB_URL";
+    throw error;
   }
 }
